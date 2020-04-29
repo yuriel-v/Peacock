@@ -1,4 +1,4 @@
-### Peacock Framework v0.1 Beta
+# Peacock Framework v0.1 Beta
 
 ## Definition:
 This framework is an interactive terminal I've written using PDCurses and a lot of patience in C++ for my lab assistant Joshu.
