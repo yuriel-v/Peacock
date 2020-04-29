@@ -117,6 +117,7 @@ namespace mtx {
      * ============================================================================== */
 
     class Metadata {
+        friend class Matrixinator;
     private:
         std::vector<double> octagon;
         std::vector<std::wstring> data;
@@ -157,6 +158,7 @@ namespace mtx {
      * ============================================================================== */
 
     class Tree {
+        friend class Matrixinator;
     private:
         std::pair<int, int> IDs; //ID and parentID
         double similarity;
@@ -194,6 +196,8 @@ namespace mtx {
         std::vector<int> USAsamples;
         int numNodes;
         int numSamples;
+        std::chrono::time_point<std::chrono::steady_clock> beg; //benchmarking
+        std::chrono::time_point<std::chrono::steady_clock> end;
 
         void init();
         void postinit();

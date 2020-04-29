@@ -123,14 +123,10 @@ namespace mtx {
                 std::pair<bool, std::vector<std::string>> results = dognose.find();
 
                 if (results.first == false) {
-                    char type[10];
-                    (option == 1) ?
-                        strcpy_s(type, ".xml\0") :
-                        strcpy_s(type, ".csv\0");
-
-                    move(8, 0);
-                    pck::printerr("<no %s files found in the specified folder - please try a different path. press any key.>", type);
-
+                    //because pck::(w)printerr doesn't do well with C-strings apparently
+                    move(8, 0); attron(COLOR_PAIR(pck::ERRCOLOR));
+                    printw("<no .%s files found in the specified folder - please try a different path. press any key.>", dognose.extension.c_str());
+                    attroff(COLOR_PAIR(pck::ERRCOLOR));
                     getch();
                     move(8, 0); clrtoeol();
                 }

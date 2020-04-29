@@ -38,7 +38,7 @@ namespace mtx {
 
 		while (std::getline<wchar_t, std::char_traits<wchar_t>, std::allocator<wchar_t>>(sstr, temp, delim)) {
 			//if (!temp.empty())
-				res.push_back(temp);
+			res.push_back(temp);
 		}
 
 		return res;
@@ -47,7 +47,7 @@ namespace mtx {
 	// True if the given ID is an USA sample, false otherwise
 	bool Matrixinator::isUS(int id)
 	{
-		for (auto& sample : USAsamples)
+		for (int& sample : USAsamples)
 			if (sample == id) return true;
 
 		return false;
@@ -56,48 +56,68 @@ namespace mtx {
 	// Carry all the node IDs from sample to root, adding them to the nodes' lists along the way
 	void Matrixinator::bulldozer(int node)
 	{
-		if (!acacia.at(node).isSample()) return;
-
+		//direct-access code
+		if (!acacia[node].sample) return;
 		std::vector<int> changeList;
-		int parent = acacia.at(node).getParentID();
+		int parent = acacia[node].IDs.second;
 
-		while (acacia.at(parent).getID() >= 1) {
-			changeList.push_back(acacia.at(node).getID());
+		while (acacia[parent].IDs.first >= 1) {
+			changeList.push_back(acacia[node].IDs.first);
 			node = parent;
-			parent = acacia.at(parent).getParentID();
+			parent = acacia[parent].IDs.second;
 
-			//add change list into parent's child list
-			for (auto& item : changeList)
-				acacia.at(node).addChild(item);
+			for (int& item : changeList)
+				acacia[node].childList.insert(item);
 		}
 
 		//node 1, parent 0
-		for (auto& item : changeList)
-			acacia.at(node).addChild(item);
+		for (int& item : changeList)
+			acacia[node].childList.insert(item);
+
+
+		//method-access code
+		//if (!acacia.at(node).isSample()) return;
+
+		//std::vector<int> changeList;
+		//int parent = acacia.at(node).getParentID();
+
+		//while (acacia.at(parent).getID() >= 1) {
+		//	changeList.push_back(acacia.at(node).getID());
+		//	node = parent;
+		//	parent = acacia.at(parent).getParentID();
+
+		//	//add change list into parent's child list
+		//	for (auto& item : changeList)
+		//		acacia.at(node).addChild(item);
+		//}
+
+		////node 1, parent 0
+		//for (auto& item : changeList)
+		//	acacia.at(node).addChild(item);
 	}
 
 	// Compare a "node"'s similarity to "origin". Returns 0 if it's below 80%.
 	double Matrixinator::bullSim(int node, int origin)
 	{
-		if (!acacia[node].isSample()) return 0;
+		if (!acacia[node].sample) return 0;
 
-		int parent = acacia[node].getParentID();
+		int parent = acacia[node].IDs.second;
 
-		while (acacia[parent].getID() >= 1) {
+		while (acacia[parent].IDs.first >= 1) {
 			// the almighty time saver
-			if (acacia[node].getSim() < 80)
+			if (acacia[node].similarity < 80)
 				return 0;
 
-			for (auto& it : acacia[parent].getChildren()) {
+			for (const int& it : acacia[parent].childList) {
 				if (it == origin)
-					return acacia[parent].getSim();
+					return acacia[parent].similarity;
 			}
 
 			node = parent;
-			parent = acacia[parent].getParentID();
+			parent = acacia[parent].IDs.second;
 		}
 		// deprecated fail-safe
-		return acacia[node].getSim();
+		return acacia[node].similarity;
 	}
 
 	// Init phase: read files to memory
@@ -146,7 +166,7 @@ namespace mtx {
 
 		numSamples = (int)SS.size();
 		wfptr->close();
-		
+
 		//because fuck wide stuff, honestly
 		delete wfptr; delete in; delete pieces;
 
@@ -210,15 +230,15 @@ namespace mtx {
 	{
 		//branching
 		for (int i = 1; i <= numNodes; ++i) {
-			if (acacia.at(i).isSample())
+			if (acacia[i].sample)
 				bulldozer(i);
 		}
 
 		//node-sample association
 		int sCount = 0;
 		for (int i = 1; i <= numNodes; ++i) {
-			if (acacia.at(i).isSample()) {
-				SS.at(sCount).associate(i);
+			if (acacia[i].sample) {
+				SS[sCount].nodeNumber = i;
 				++sCount;
 			}
 		}
@@ -236,12 +256,12 @@ namespace mtx {
 			if (isUS(foreign)) {
 				continue;
 			}
-			similarities.clear(); //just in case
+			similarities.clear();
 			matches.clear();
 
 			int caseCount = 0;
-			for (auto& item : USAsamples) {
-				double sim = bullSim(SS.at(foreign).getNode(), SS.at(item).getNode());
+			for (int& item : USAsamples) {
+				double sim = bullSim(SS[foreign].nodeNumber, SS[item].nodeNumber);
 
 				if (sim >= 80) {
 					++caseCount;
@@ -249,8 +269,8 @@ namespace mtx {
 					similarities.push_back(sim);
 
 					if (detailed) {
-						std::pair<std::wstring, double> pr(SS.at(item).getData().front(), sim);
-						SS.at(foreign).appendMatch(pr);
+						//std::pair<std::wstring, double> pr(SS[item].data.front(), sim);
+						SS[foreign].usaMatches.push_back(std::make_pair(SS[item].data.front(), sim));
 					}
 				}
 			}
@@ -259,54 +279,48 @@ namespace mtx {
 			case 0:
 				// because if it gets here, then no matches have been made up above
 				if (detailed)
-					SS.at(foreign).appendMatch(std::make_pair(std::to_wstring(0), 0));
-
-				//no need as constructor sets it as this by default
-				//SS.at(foreign).setOctagon({ -1, -1, -1, -1, -1, -1, -1, -1 });
+					SS[foreign].usaMatches.push_back(std::make_pair(std::to_wstring(0), 0));
 				break;
 
 			case 1:
-				//SS.at(foreign).setOctagon(SS.at(matches.at(0)).getOctagon());
-				SS.at(foreign).copyOct(SS.at(matches.at(0)));
+				SS[foreign].octagon = SS[matches[0]].octagon;
+				//SS.at(foreign).copyOct(SS.at(matches.at(0)));
 				break;
 
 			default:
 				//multiply origins' octagon values by the similarity of origin samples to the foreign sample
-				std::vector<std::vector<double>> tempOct(matches.size());
-				for (int i = 0; i < matches.size(); i++)
-					tempOct.at(i).resize(8);
-
-				//similarity between matches and foreign, lined up by index: match[0] => sim[0]
-				/*std::vector<double> similarities;
-				for (auto& it : matches)
-					similarities.push_back(bullSim(SS.at(foreign).getNode(), SS.at(it).getNode()));*/
+				std::vector<std::array<double, 8>> tempOct(matches.size());
+				std::array<double, 8> foreignOctagon;
+				double tempSim = 0;
 
 				int i = 0;
-				for (auto& it : matches) {
+				for (int& it : matches) {
 					for (int j = 0; j < 8; ++j) //octagon value #j
-						tempOct[i][j] = SS.at(it).getOctagon().at(j) * similarities.at(i);
+						//tempOct[i][j] = SS.at(it).getOctagon().at(j) * similarities.at(i);
+						tempOct[i][j] = SS[it].octagon[j] * similarities[i];
 					++i;
 				}
 
 				//add up all the similarities between origins and foreign
-				double tempSim = 0;
-				for (auto& it : similarities)
+				for (double& it : similarities)
 					tempSim += it;
 
 				//add up all octagon values into a single octagon set
-				std::array<double, 8> foreignOctagon = { 0, 0, 0, 0, 0, 0, 0, 0 };
+				foreignOctagon.fill(0);
 				for (int i = 0; i < (int)matches.size(); ++i) {
 					for (int j = 0; j < 8; ++j)
 						foreignOctagon[j] += tempOct[i][j];
 				}
 
-				//then divide these values by the added similarity "tempSim"
+				//then divide these values by the added similarity "tempSim" and send it back
+				SS[foreign].octagon.clear();
 				for (int i = 0; i < 8; ++i) {
-					foreignOctagon[i] /= tempSim;
+					//foreignOctagon[i] /= tempSim;
+					SS[foreign].octagon.push_back(foreignOctagon[i] / tempSim);
 				}
 
 				//now send it back
-				SS.at(foreign).setOctagon(foreignOctagon);
+				//SS.at(foreign).setOctagon(foreignOctagon);
 			}
 		}
 	}
@@ -351,20 +365,20 @@ namespace mtx {
 			output << L"MatchKey=Similarity,";
 
 		output << L"\n";
-		
-		for (auto& entry : SS) {
+
+		for (Metadata& entry : SS) {
 			//data
-			for (auto& field : entry.getData())
+			for (std::wstring& field : entry.getData())
 				output << field << L",";
 
 			if (!entry.nullOct()) {
 				//octagon
-				for (auto& value : entry.getOctagon())
+				for (double& value : entry.getOctagon())
 					output << value << L",";
 
 				//matches
 				if (detailed) {
-					for (auto& pair : entry.getMatches())
+					for (std::pair<std::wstring, double>& pair : entry.getMatches())
 						output << pair.first << L"=" << pair.second << L",";
 				}
 			}
@@ -377,7 +391,7 @@ namespace mtx {
 	}
 
 	// Main sequence
-	void Matrixinator::mainSequence() 
+	void Matrixinator::mainSequence()
 	{
 		int maxY, maxX; getmaxyx(stdscr, maxY, maxX);
 		maxY /= 2;
@@ -392,6 +406,9 @@ namespace mtx {
 		//because aesthethiccs are important
 		wmove(mtxcon, getcury(mtxcon), getcurx(mtxcon) - 1);
 		wprintw(mtxcon, "   ");
+
+		//benchmarking
+		beg = std::chrono::high_resolution_clock::now();
 
 		//fail-safe
 		if (!isIOdefined()) {
@@ -449,7 +466,11 @@ namespace mtx {
 
 		(overwrite) ?
 			mvwprintw(mtxcon, getcury(mtxcon) + 1, 1, "Outputting results to file: \"%s\"... ", paths.getMeta().c_str()) :
-			mvwprintw(mtxcon, getcury(mtxcon) + 1, 1, "Outputting results to file: \"output.csv\"... ");
+
+			mvwprintw(mtxcon, getcury(mtxcon) + 1, 1, "Outputting results to file: \"%s\"... ",
+				(paths.getMeta().substr(0, paths.getMeta().find_last_of('.')) + "-out.csv").c_str()
+			);
+
 		wrefresh(mtxcon);
 		try {
 			output();
@@ -472,9 +493,11 @@ namespace mtx {
 	}
 
 	// Closing sequence
-	void Matrixinator::closing(int code, WINDOW* mtxcon) 
+	void Matrixinator::closing(int code, WINDOW* mtxcon)
 	{
-		mvwprintw(mtxcon, (getmaxy(mtxcon) / 4) * 3, 1, "Execution terminated. Code: %d | Status: ", code);
+		end = std::chrono::high_resolution_clock::now();
+		double total = (double)std::chrono::duration_cast<std::chrono::milliseconds>(end - beg).count() / 1000;
+		mvwprintw(mtxcon, (getmaxy(mtxcon) / 4) * 3, 1, "Execution terminated. Duration: %.2fs | Code: %d | Status: ", total, code);
 		if (code == 0)
 			pck::wprintok(mtxcon, "OK");
 		else {
