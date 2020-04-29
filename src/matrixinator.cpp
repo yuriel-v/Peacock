@@ -379,7 +379,8 @@ namespace mtx {
 				//matches
 				if (detailed) {
 					for (std::pair<std::wstring, double>& pair : entry.getMatches())
-						output << pair.first << L"=" << pair.second << L",";
+						output << pair.first << L"=" << pair.second << L"; ";
+					output << L",";
 				}
 			}
 			else if (detailed)

@@ -10,44 +10,6 @@
 #include <iostream>
 #include <sstream>
 
- // testing dognose
- /*initscr(); raw(); noecho(); curs_set(0);
-
- pck::FileSniffer dognose;
- dognose.extension = "csv";
- dognose.path = "C:/Users/leona/Desktop/";
- dognose.setMaxLen(35); dognose.togglePrintMode();
- std::pair<bool, std::vector<std::string>> vars = dognose.find();
-
- mvprintw(0, 0, "Search returned %d file(s).", (int)vars.second.size());
- if (vars.first) {
-	 pck::DisplayQueue disp(vars.second, 4);
-	 int option = disp.qmenu();
-	 move(2, 0); clrtoeol();
-
-	 if (option >= 0)
-		 mvprintw(2, 0, "You chose item #%d: %s", option + 1, vars.second.at(option).c_str());
-	 else
-		 mvprintw(2, 0, "You didn't choose anything.");
- }
- getch();*/
-
- // scanf with strings
- /*initscr();
- printw("Type something: ");
- std::string input;
- mvscanw(2, 0, "%s", input.c_str());
- mvprintw(1, 0, "You typed: %s", input.c_str());
-
- getch();*/
-
-//wide strings
- /*std::wstring example = L"The quick brown fox jumps over the lazy dog";
-
-	 std::vector<std::wstring> pieces = mtx::Matrixinator::w_sliceNsplice(example, 'e');
-	 for (auto& item : pieces)
-		 std::wcout << item << std::endl;*/
-
 int main()
 {
 	pck::Peacock* pck = new pck::Peacock();

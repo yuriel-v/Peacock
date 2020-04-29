@@ -29,7 +29,6 @@
 
 #include <vector>
 #include <string>
-#undef MOUSE_MOVED
 #include <curses.h>
 #include <thread>
 #include <chrono>
