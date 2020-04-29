@@ -198,6 +198,7 @@ namespace mtx {
 
 		//this is a specialized matrixinator class, any other file types are irrelevant
 		std::string extension = filePieces.back().substr(filePieces.back().length() - 3, 3);
+		std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
 		if (extension != "csv" && extension != "xml")
 			return;
 

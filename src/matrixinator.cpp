@@ -79,25 +79,25 @@ namespace mtx {
 	// Compare a "node"'s similarity to "origin". Returns 0 if it's below 80%.
 	double Matrixinator::bullSim(int node, int origin)
 	{
-		if (!acacia.at(node).isSample()) return 0;
+		if (!acacia[node].isSample()) return 0;
 
-		int parent = acacia.at(node).getParentID();
-		while (acacia.at(parent).getID() >= 1) {
-			//the almighty time saver returns
-			if (acacia.at(node).getSim() < 80)
+		int parent = acacia[node].getParentID();
+
+		while (acacia[parent].getID() >= 1) {
+			// the almighty time saver
+			if (acacia[node].getSim() < 80)
 				return 0;
 
-			for (auto& it : acacia.at(parent).getChildren()) {
+			for (auto& it : acacia[parent].getChildren()) {
 				if (it == origin)
-					return acacia.at(parent).getSim();
+					return acacia[parent].getSim();
 			}
 
 			node = parent;
-			parent = acacia.at(parent).getParentID();
+			parent = acacia[parent].getParentID();
 		}
-
-		//just in case
-		return 0;
+		// deprecated fail-safe
+		return acacia[node].getSim();
 	}
 
 	// Init phase: read files to memory
@@ -228,13 +228,14 @@ namespace mtx {
 	// Sweep phase: process data in memory
 	void Matrixinator::sweep()
 	{
+		std::vector<double> similarities;
+		std::vector<int> matches;
+
 		for (int foreign = 0; foreign < numSamples; ++foreign) {
 
 			if (isUS(foreign)) {
 				continue;
 			}
-			std::vector<double> similarities;
-			std::vector<int> matches;
 			similarities.clear(); //just in case
 			matches.clear();
 
@@ -247,8 +248,10 @@ namespace mtx {
 					matches.push_back(item);
 					similarities.push_back(sim);
 
-					if (detailed)
-						SS.at(foreign).appendMatch(SS.at(item).getData().at(0), sim);
+					if (detailed) {
+						std::pair<std::wstring, double> pr(SS.at(item).getData().front(), sim);
+						SS.at(foreign).appendMatch(pr);
+					}
 				}
 			}
 
@@ -291,7 +294,7 @@ namespace mtx {
 					tempSim += it;
 
 				//add up all octagon values into a single octagon set
-				double foreignOctagon[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+				std::array<double, 8> foreignOctagon = { 0, 0, 0, 0, 0, 0, 0, 0 };
 				for (int i = 0; i < (int)matches.size(); ++i) {
 					for (int j = 0; j < 8; ++j)
 						foreignOctagon[j] += tempOct[i][j];
